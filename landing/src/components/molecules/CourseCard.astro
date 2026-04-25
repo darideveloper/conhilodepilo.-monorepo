@@ -45,7 +45,7 @@ const parsedDescription = description ? marked.parse(description) : "";
       <Icon name="Calendar" size={16} />
       {formattedDuration}
     </div>
-    <div class="markdown text-sm text-ui-text-muted leading-relaxed flex-1 prose prose-sm prose-p:my-1 prose-ul:my-1 prose-li:list-disc prose-li:ml-4">
+    <div class="line-clamp-3 markdown text-sm text-ui-text-muted leading-relaxed flex-1 prose prose-sm prose-p:my-1 prose-ul:my-1 prose-li:list-disc prose-li:ml-4">
       {
         parsedDescription ? (
           <Fragment set:html={parsedDescription} />
