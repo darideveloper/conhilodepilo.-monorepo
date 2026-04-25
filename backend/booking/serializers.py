@@ -36,7 +36,8 @@ class EventSerializer(serializers.ModelSerializer):
 
 class EventTypeSerializer(serializers.ModelSerializer):
     services = EventSerializer(source='events', many=True, read_only=True)
+    group_id = serializers.ReadOnlyField(source='group.id')
 
     class Meta:
         model = EventType
-        fields = ['id', 'name', 'description', 'image', 'services']
+        fields = ['id', 'name', 'description', 'image', 'services', 'group_id']

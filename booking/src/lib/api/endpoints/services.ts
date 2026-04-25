@@ -15,6 +15,7 @@ export interface BackendServiceCategory {
   description: string;
   image: string;
   services: BackendService[];
+  group_id: number | null;
 }
 
 export interface ServiceDates {
@@ -38,6 +39,7 @@ export interface ServiceCategory {
   description: string;
   image: string;
   services: Service[];
+  group_id: string | null;
 }
 
 export async function fetchServices(): Promise<ServiceCategory[]> {
@@ -46,6 +48,7 @@ export async function fetchServices(): Promise<ServiceCategory[]> {
   return data.map((category) => ({
     ...category,
     id: String(category.id),
+    group_id: category.group_id ? String(category.group_id) : null,
     services: category.services.map((service) => ({
       ...service,
       id: String(service.id),

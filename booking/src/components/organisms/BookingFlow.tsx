@@ -42,16 +42,21 @@ export default function BookingFlow() {
     // 3. Handle Service (formerly tour)
     const serviceQuery = urlParams.get('service') || urlParams.get('tour');
     if (serviceQuery) {
+      // Find the category for this service to pre-fill Step 1
+      const category = servicesData.find((cat: any) => 
+        cat.services.some((s: any) => s.id === serviceQuery)
+      );
+
+      // Set lockedGroupId if category has a group_id
+      if (category && category.group_id) {
+        updateFormData({ lockedGroupId: category.group_id });
+      }
+
       const isAlreadyAdded = (useBookingStore.getState() as any).formData.selectedServices.some(
         (s: any) => s.serviceId === serviceQuery
       );
 
       if (!isAlreadyAdded) {
-        // Find the category for this service to pre-fill Step 1
-        const category = servicesData.find((cat: any) => 
-          cat.services.some((s: any) => s.id === serviceQuery)
-        );
-        
         const currentServices = (useBookingStore.getState() as any).formData.selectedServices;
 
         updateFormData({ 
@@ -70,11 +75,7 @@ export default function BookingFlow() {
       }
     }
 
-    // 4. Handle Service Group
-    const serviceGroupQuery = urlParams.get('service_group');
-    if (serviceGroupQuery) {
-      updateFormData({ serviceGroup: serviceGroupQuery });
-    }
+    // 4. Handle Service Group (Ignored per requirements)
   }, [updateFormData, setLanguage, setTheme, setVisibility, servicesData])
 
   // Apply brand color

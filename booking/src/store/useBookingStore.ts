@@ -48,6 +48,7 @@ interface BookingState {
     email: string;
     selectedServices: SelectedService[];
     serviceGroup: string | null;
+    lockedGroupId: string | null;
     guests: number;
     specialRequests: string;
     privacyAccepted: boolean;
@@ -90,6 +91,7 @@ export const useBookingStore = create<BookingState>()(
         email: '',
         selectedServices: [],
         serviceGroup: null,
+        lockedGroupId: null,
         guests: 1,
         specialRequests: '',
         privacyAccepted: false,
@@ -143,6 +145,7 @@ export const useBookingStore = create<BookingState>()(
           email: '',
           selectedServices: [],
           serviceGroup: null,
+          lockedGroupId: null,
           guests: 1,
           specialRequests: '',
           privacyAccepted: false,

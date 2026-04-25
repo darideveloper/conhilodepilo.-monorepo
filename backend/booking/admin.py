@@ -9,6 +9,7 @@ from project.admin import ModelAdminUnfoldBase
 from solo.admin import SingletonModelAdmin
 from .models import (
     CompanyProfile,
+    EventTypeGroup,
     EventType,
     Event,
     CompanyAvailability,
@@ -156,14 +157,20 @@ class CompanyProfileAdmin(SingletonModelAdmin, ModelAdminUnfoldBase):
             kwargs["widget"] = UnfoldAdminColorInputWidget
         return super().formfield_for_dbfield(db_field, **kwargs)
 
+@admin.register(EventTypeGroup)
+class EventTypeGroupAdmin(ModelAdminUnfoldBase):
+    list_display = ("name",)
+
 @admin.register(EventType)
 class EventTypeAdmin(ModelAdminUnfoldBase):
-    list_display = ("name", "payment_model", "allow_overlap")
+    list_display = ("name", "group", "payment_model", "allow_overlap")
+    list_filter = ("group", "payment_model")
     inlines = [EventInline]
 
     fieldsets = (
         (_("General"), {
             "fields": (
+                "group",
                 "name",
                 "description",
                 "payment_model",
@@ -175,7 +182,7 @@ class EventTypeAdmin(ModelAdminUnfoldBase):
 
     tabs = [
         (_("General"), ["fieldsets"]),
-        (_("Services"), ["events"]),
+        (_("Servicios"), ["events"]),
     ]
 
 @admin.register(Event)

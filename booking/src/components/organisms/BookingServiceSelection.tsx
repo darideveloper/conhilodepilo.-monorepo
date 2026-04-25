@@ -18,6 +18,11 @@ export function BookingServiceSelection() {
   const config = useBookingStore((state: any) => state.config);
   const servicesData = useBookingStore((state: any) => state.services);
 
+  const filteredServicesData = servicesData.filter((category: any) => {
+    if (!formData.lockedGroupId) return true;
+    return category.group_id === formData.lockedGroupId;
+  });
+
   const [localServiceTypeId, setLocalServiceTypeId] = useState<string>("");
   const [localServiceId, setLocalServiceId] = useState<string>("");
 
@@ -89,7 +94,7 @@ export function BookingServiceSelection() {
               className="h-11 text-sm w-full rounded-xl border-border bg-background"
             >
               <option value="" disabled>{t.calendar?.selectTour || "Seleccione una categoría"}</option>
-              {servicesData.map((category: any) => (
+              {filteredServicesData.map((category: any) => (
                 <option key={category.id} value={category.id}>
                   {typeof category.name === 'string' ? category.name : (category.name[language] || category.name.es)}
                 </option>

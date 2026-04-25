@@ -106,11 +106,22 @@ class CompanyProfile(SingletonModel):
 
 # --- Service Catalog ---
 
+class EventTypeGroup(models.Model):
+    name = models.CharField(_("Name"), max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Agrupación de servicios")
+        verbose_name_plural = _("Agrupaciones de servicios")
+
 class EventType(models.Model):
     PAYMENT_MODELS = [
         ("PRE-PAID", _("Pre-paid")),
         ("POST-PAID", _("Post-paid")),
     ]
+    group = models.ForeignKey(EventTypeGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="event_types", verbose_name=_("Agrupación"))
     name = models.CharField(_("Name"), max_length=100)
     description = models.TextField(_("Description"), null=True, blank=True)
     payment_model = models.CharField(_("Payment model"), max_length=20, choices=PAYMENT_MODELS, default="POST-PAID")
