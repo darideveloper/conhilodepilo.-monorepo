@@ -35,6 +35,7 @@ export const translations = {
       successMessage: "Hemos recibido tu solicitud de reserva. Te contactaremos pronto.",
       close: "Cerrar",
       submitting: "Enviando...",
+      additional: "(adicional)",
     },
     stripe: {
       name: "Nombre",
@@ -96,6 +97,7 @@ export const translations = {
       successMessage: "We have received your booking request. We will contact you soon.",
       close: "Close",
       submitting: "Sending...",
+      additional: "(additional)",
     },
     stripe: {
       name: "Name",

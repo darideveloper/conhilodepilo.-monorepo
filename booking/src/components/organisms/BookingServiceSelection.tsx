@@ -82,6 +82,7 @@ export function BookingServiceSelection() {
           <div className="grid gap-1.5">
             <Label htmlFor="serviceTypeId" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               {config?.event_type_label || "Tipo de Servicio"}
+              {formData.selectedServices.length > 0 && ` ${t.form?.additional || "(adicional)"}`}
             </Label>
             <Select
               id="serviceTypeId"
