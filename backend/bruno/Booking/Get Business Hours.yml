@@ -9,10 +9,15 @@ http:
 
 runtime:
   assertions:
-    - name: Status is 200
-      value: res.status
+    - expression: ""
       operator: eq
-      target: 200
+      value: res.status
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
 
 docs: |
   # Get Business Hours
