@@ -7,7 +7,7 @@ import { Label } from "@/components/atoms/ui/label"
 import { Textarea } from "@/components/atoms/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/atoms/ui/card"
 import { BookingHeader } from "@/components/molecules/BookingHeader"
-import { ArrowLeft, Send, Users, Calendar, MapPin, CheckCircle2, ShieldCheck, AlertCircle } from "lucide-react"
+import { Send, Calendar, MapPin, CheckCircle2, AlertCircle, Phone, User, Mail, Clock } from "lucide-react"
 
 import { Checkbox } from "@/components/atoms/ui/checkbox"
 import { submitBooking } from "@/lib/api/endpoints/booking"
@@ -18,11 +18,12 @@ export function BookingForm() {
   const config = useBookingStore((state: any) => state.config)
   const updateFormData = useBookingStore((state: any) => state.updateFormData)
   const selectedDate = useBookingStore((state: any) => state.selectedDate)
+  const selectedTime = useBookingStore((state: any) => state.selectedTime)
   const prevStep = useBookingStore((state: any) => state.prevStep)
-  const visibility = useBookingStore((state: any) => state.visibility)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const servicesData = useBookingStore((state: any) => state.services)
 
@@ -34,19 +35,33 @@ export function BookingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
     
+    if (!selectedDate || !selectedTime) {
+        setError(language === 'es' ? 'Falta fecha u hora' : 'Missing date or time')
+        setIsSubmitting(false)
+        return
+    }
+
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     try {
       await submitBooking({
-        fullName: formData.fullName,
-        email: formData.email,
-        serviceIds: formData.selectedServices.map((s: any) => s.serviceId),
-        guests: formData.guests,
+        clientName: formData.fullName,
+        clientEmail: formData.email,
+        clientPhone: formData.phone,
+        service_ids: formData.selectedServices.map((s: any) => parseInt(s.serviceId)),
+        date: dateStr,
+        startTime: selectedTime,
         specialRequests: formData.specialRequests,
       })
       setIsSubmitted(true)
-    } catch (error) {
-      console.error('Error submitting booking:', error)
-      // TODO: Handle error feedback
+    } catch (err: any) {
+      console.error('Error submitting booking:', err)
+      setError(err.message || (language === 'es' ? 'Error al procesar la reserva' : 'Error processing booking'))
     } finally {
       setIsSubmitting(false)
     }
@@ -57,15 +72,9 @@ export function BookingForm() {
       <Card className="w-full max-w-md shadow-2xl border-none bg-background rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-500">
         <BookingHeader />
         <CardContent className="flex flex-col items-center justify-center py-12 px-8 text-center space-y-6">
-          {config?.logo ? (
-            <div className="hidden">
-              <img src={config.logo} alt={config.company_name || "Logo"} className="h-12 w-auto object-contain mb-2" />
-            </div>
-          ) : (
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-              <CheckCircle2 className="w-10 h-10 text-primary" />
-            </div>
-          )}
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+            <CheckCircle2 className="w-10 h-10 text-primary" />
+          </div>
           <div className="space-y-2">
             <h2 className="text-3xl font-serif font-bold text-foreground">{t.form.successTitle}</h2>
             <p className="text-muted-foreground">{t.form.successMessage}</p>
@@ -73,11 +82,20 @@ export function BookingForm() {
           <div className="w-full p-4 bg-muted rounded-2xl text-left space-y-3 border border-border">
             <div className="flex items-center gap-3 text-sm">
               <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center border border-border">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t.form.fullName}</p>
+                <p className="font-medium">{formData.fullName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center border border-border">
                 <Calendar className="w-4 h-4 text-primary" />
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t.stripe.date}</p>
-                <p className="font-medium">{selectedDate?.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')}</p>
+                <p className="font-medium">{selectedDate?.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')} - {selectedTime}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 text-sm">
@@ -133,55 +151,68 @@ export function BookingForm() {
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-1">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <p className="text-xs font-medium">{error}</p>
+            </div>
+          )}
+
           <div className="grid gap-4">
             <div className="space-y-2 group">
               <Label htmlFor="fullName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-focus-within:text-primary transition-colors">
                 {t.form.fullName}
               </Label>
-              <Input
-                id="fullName"
-                placeholder={t.form.fullNamePlaceholder}
-                value={formData.fullName}
-                onChange={(e) => updateFormData({ fullName: e.target.value })}
-                className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all h-11"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="fullName"
+                  placeholder={t.form.fullNamePlaceholder}
+                  value={formData.fullName}
+                  onChange={(e) => updateFormData({ fullName: e.target.value })}
+                  className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all h-11 pl-10"
+                  required
+                />
+                <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="space-y-2 group">
               <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-focus-within:text-primary transition-colors">
                 {t.form.email}
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t.form.emailPlaceholder}
-                value={formData.email}
-                onChange={(e) => updateFormData({ email: e.target.value })}
-                className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all h-11"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder={t.form.emailPlaceholder}
+                  value={formData.email}
+                  onChange={(e) => updateFormData({ email: e.target.value })}
+                  className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all h-11 pl-10"
+                  required
+                />
+                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="space-y-2 group">
+              <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-focus-within:text-primary transition-colors">
+                {(t.form as any).phone}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder={(t.form as any).phonePlaceholder}
+                  value={formData.phone}
+                  onChange={(e) => updateFormData({ phone: e.target.value })}
+                  className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all h-11 pl-10"
+                  required
+                />
+                <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="guests" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t.form.guests}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="guests"
-                    type="number"
-                    min="1"
-                    value={formData.guests}
-                    onChange={(e) => updateFormData({ guests: parseInt(e.target.value) || 1 })}
-                    className="rounded-xl border-border bg-muted/30 pl-10 h-11"
-                    required
-                  />
-                  <Users className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {t.stripe.date}
@@ -189,6 +220,15 @@ export function BookingForm() {
                 <div className="h-11 rounded-xl bg-muted/50 border border-border flex items-center px-3 gap-2.5 text-sm font-medium text-foreground">
                   <Calendar className="w-4 h-4 text-primary" />
                   {selectedDate?.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Hora
+                </Label>
+                <div className="h-11 rounded-xl bg-muted/50 border border-border flex items-center px-3 gap-2.5 text-sm font-medium text-foreground">
+                  <Clock className="w-4 h-4 text-primary" />
+                  {selectedTime}
                 </div>
               </div>
             </div>
@@ -202,7 +242,7 @@ export function BookingForm() {
                 placeholder={t.form.specialRequestsPlaceholder}
                 value={formData.specialRequests}
                 onChange={(e) => updateFormData({ specialRequests: e.target.value })}
-                className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all resize-none min-h-[100px]"
+                className="rounded-xl border-border bg-muted/30 focus:bg-background transition-all resize-none min-h-[80px]"
               />
             </div>
 
@@ -221,10 +261,11 @@ export function BookingForm() {
                   {(() => {
                     const policyText = language === 'es' ? 'política de privacidad' : 'privacy policy';
                     const parts = t.form.privacyPolicy.split(policyText);
+                    const privacyUrl = config?.privacy_policy_url || "/privacy";
                     return (
                       <>
                         {parts[0]}
-                        <a href="/privacy" className="text-primary hover:underline font-bold" target="_blank" rel="noopener noreferrer">
+                        <a href={privacyUrl} className="text-primary hover:underline font-bold" target="_blank" rel="noopener noreferrer">
                           {policyText}
                         </a>
                         {parts[1]}

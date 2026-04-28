@@ -108,6 +108,13 @@ class AvailabilityAPITest(APITestCase):
         # Create company availability range
         profile = CompanyProfile.get_solo()
         CompanyAvailability.objects.create(company=profile, start_date=date(2026, 1, 1), end_date=date(2026, 12, 31))
+        # Need at least one slot
+        CompanyWeekdaySlot.objects.create(
+            company=profile,
+            weekday=date.today().weekday(),
+            start_time=time(9, 0),
+            end_time=time(17, 0)
+        )
         # Service has no range -> should fallback to company
         response = self.client.get(self.url, {'service_ids': str(self.service.id)})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -120,3 +127,68 @@ class AvailabilityAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Today should NOT be in the available dates
         self.assertNotIn(date.today().strftime('%Y-%m-%d'), response.json())
+
+class BookingAPITest(APITestCase):
+    def setUp(self):
+        self.url = reverse('api-bookings')
+        self.profile = CompanyProfile.get_solo()
+        self.category = EventType.objects.create(name="Tours")
+        self.service = Event.objects.create(
+            event_type=self.category,
+            name="Tour",
+            price="100.00",
+            duration_minutes=60
+        )
+        # Set up availability for tomorrow
+        self.tomorrow = date.today() + timedelta(days=1)
+        CompanyAvailability.objects.create(
+            company=self.profile, 
+            start_date=self.tomorrow, 
+            end_date=self.tomorrow + timedelta(days=1)
+        )
+        CompanyWeekdaySlot.objects.create(
+            company=self.profile,
+            weekday=self.tomorrow.weekday(),
+            start_time=time(10, 0),
+            end_time=time(12, 0)
+        )
+
+    def test_create_booking_success(self):
+        payload = {
+            "service_ids": [self.service.id],
+            "date": self.tomorrow.strftime('%Y-%m-%d'),
+            "startTime": "10:00",
+            "clientName": "John Doe",
+            "clientEmail": "john@example.com",
+            "clientPhone": "123456789",
+            "specialRequests": "Looking forward to it!"
+        }
+        response = self.client.post(self.url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()['client_name'], "John Doe")
+        
+        # Verify booking in DB
+        from .models import Booking
+        self.assertTrue(Booking.objects.filter(client_email="john@example.com").exists())
+
+    def test_create_booking_unavailable_slot(self):
+        payload = {
+            "service_ids": [self.service.id],
+            "date": self.tomorrow.strftime('%Y-%m-%d'),
+            "startTime": "09:00", # Outside business hours
+            "clientName": "John Doe",
+            "clientEmail": "john@example.com"
+        }
+        response = self.client.post(self.url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("no longer available", response.json()['error'])
+
+    def test_create_booking_missing_fields(self):
+        payload = {
+            "service_ids": [self.service.id],
+            "date": self.tomorrow.strftime('%Y-%m-%d'),
+            # Missing startTime, clientName, clientEmail
+        }
+        response = self.client.post(self.url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Missing required fields", response.json()['error'])

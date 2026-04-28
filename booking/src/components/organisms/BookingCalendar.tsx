@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Calendar } from '@/components/atoms/ui/calendar';
 import { Card, CardContent } from '@/components/atoms/ui/card';
 import { Button } from '@/components/atoms/ui/button';
 import { Label } from '@/components/atoms/ui/label';
-import { Select } from '@/components/atoms/ui/select';
 import { cn } from "@/lib/utils";
 import { es, enUS } from 'date-fns/locale';
 import { STATUS_CONFIG, type StatusKey } from './types';
@@ -12,7 +11,7 @@ import { StatusDetails } from '@/components/molecules/StatusDetails';
 import { BookingHeader } from '@/components/molecules/BookingHeader';
 import { useBookingStore } from '../../store/useBookingStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Clock, Check } from 'lucide-react';
 
 
 /**
@@ -22,14 +21,17 @@ export function BookingCalendar() {
   const { t, language } = useTranslation();
   const selectedDate = useBookingStore((state: any) => state.selectedDate);
   const setSelectedDate = useBookingStore((state: any) => state.setSelectedDate);
+  const selectedTime = useBookingStore((state: any) => state.selectedTime);
+  const setSelectedTime = useBookingStore((state: any) => state.setSelectedTime);
+  const availableSlots = useBookingStore((state: any) => state.availableSlots);
+  const isSlotsLoading = useBookingStore((state: any) => state.isSlotsLoading);
+  const fetchSlots = useBookingStore((state: any) => state.fetchSlots);
+  
   const availability = useBookingStore((state: any) => state.availability);
   const isAvailabilityLoading = useBookingStore((state: any) => state.isAvailabilityLoading);
   const availabilityError = useBookingStore((state: any) => state.availabilityError);
   const nextStep = useBookingStore((state: any) => state.nextStep);
   const formData = useBookingStore((state: any) => state.formData);
-  const updateFormData = useBookingStore((state: any) => state.updateFormData);
-  const visibility = useBookingStore((state: any) => state.visibility);
-  const config = useBookingStore((state: any) => state.config);
   const prevStep = useBookingStore((state: any) => state.prevStep);
 
   const dateLocale = language === 'es' ? es : enUS;
@@ -39,6 +41,16 @@ export function BookingCalendar() {
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
+
+  useEffect(() => {
+    if (selectedDate && formData.selectedServices.length > 0) {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      fetchSlots(formData.selectedServices, dateStr);
+    }
+  }, [selectedDate, formData.selectedServices, fetchSlots]);
 
   const modifiers = useMemo(() => ({
     isAvailable: (d: Date) => {
@@ -142,12 +154,57 @@ export function BookingCalendar() {
             />
           </div>
 
-          <div className="w-full space-y-4">
+          {selectedDate && (
+            <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center gap-2 px-1">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">
+                  {language === 'es' ? 'Horas disponibles' : 'Available times'}
+                </Label>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-2">
+                {isSlotsLoading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />
+                  ))
+                ) : availableSlots.length > 0 ? (
+                  availableSlots.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => setSelectedTime(time)}
+                      className={cn(
+                        "h-10 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1",
+                        selectedTime === time
+                          ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2"
+                          : "bg-background border border-border hover:border-primary/50 hover:bg-accent"
+                      )}
+                    >
+                      {time}
+                      {selectedTime === time && <Check className="w-3 h-3" />}
+                    </button>
+                  ))
+                ) : (
+                  <div className="col-span-4 py-4 text-center text-xs text-muted-foreground bg-muted/30 rounded-lg border border-dashed border-border">
+                    {language === 'es' ? 'No hay horas disponibles para este día' : 'No available times for this day'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="w-full space-y-4 pt-2">
+            {selectedDate && !selectedTime && availableSlots.length > 0 && (
+               <p className="text-center text-[10px] text-amber-600 font-medium">
+                {language === 'es' ? 'Por favor, selecciona una hora para continuar' : 'Please select a time to continue'}
+               </p>
+            )}
+
             {selectedDate && <StatusDetails date={selectedDate} statusKey={statusKey} />}
             
             <Button 
               className="w-full py-6 text-lg font-serif rounded-xl"
-              disabled={!selectedDate || formData.selectedServices.length === 0}
+              disabled={!selectedDate || !selectedTime || formData.selectedServices.length === 0}
               onClick={nextStep}
             >
               {t.calendar.continue}
@@ -162,4 +219,3 @@ export function BookingCalendar() {
     </>
   );
 }
-

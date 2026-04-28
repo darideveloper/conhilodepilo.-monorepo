@@ -97,6 +97,7 @@ class CompanyProfile(SingletonModel):
     availability_regular_label = models.CharField(_("Availability regular label"), max_length=50, default="Partial")
     availability_no_free_label = models.CharField(_("Availability no free label"), max_length=50, default="Fully Booked")
     extras_label = models.CharField(_("Extras label"), max_length=50, default="Add-ons")
+    privacy_policy_url = models.URLField(_("Privacy policy URL"), null=True, blank=True)
 
     def __str__(self):
         return str(_("Company Profile"))
@@ -214,6 +215,7 @@ class Booking(models.Model):
     client_email = models.EmailField(_("Client email"))
     client_phone = models.CharField(_("Client phone"), max_length=20, null=True, blank=True)
     status = models.CharField(_("Status"), max_length=20, choices=STATUS_CHOICES, default="PENDING", db_index=True)
+    special_requests = models.TextField(_("Special requests"), null=True, blank=True)
     google_event_id = models.CharField(_("Google event ID"), max_length=255, null=True, blank=True)
     stripe_payment_id = models.CharField(_("Stripe payment ID"), max_length=255, null=True, blank=True)
 

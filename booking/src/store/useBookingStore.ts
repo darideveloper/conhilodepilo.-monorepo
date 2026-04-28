@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { fetchAvailability } from '../lib/api/availability';
+import { fetchAvailability, fetchSlots } from '../lib/api/availability';
 import { fetchConfig as fetchAppConfig } from '../lib/api/endpoints/config';
 import { fetchServices as fetchAppServices, type ServiceCategory } from '../lib/api/endpoints/services';
 
@@ -21,6 +21,7 @@ export interface AppConfig {
   availability_regular_label: string;
   availability_no_free_label: string;
   extras_label: string;
+  privacy_policy_url: string;
 }
 
 interface Availability {
@@ -38,6 +39,7 @@ interface BookingState {
   language: Language;
   theme: Theme;
   selectedDate: Date | undefined;
+  selectedTime: string | undefined;
   currentStep: number;
   config: AppConfig | null;
   isConfigLoading: boolean;
@@ -46,10 +48,10 @@ interface BookingState {
   formData: {
     fullName: string;
     email: string;
+    phone: string;
     selectedServices: SelectedService[];
     serviceGroup: string | null;
     lockedGroupId: string | null;
-    guests: number;
     specialRequests: string;
     privacyAccepted: boolean;
   };
@@ -61,15 +63,19 @@ interface BookingState {
   availability: Availability;
   isAvailabilityLoading: boolean;
   availabilityError: string | null;
+  availableSlots: string[];
+  isSlotsLoading: boolean;
   setLanguage: (language: Language) => void;
   setTheme: (theme: Theme) => void;
   setVisibility: (visibility: Partial<BookingState['visibility']>) => void;
   setSelectedDate: (date: Date | undefined) => void;
+  setSelectedTime: (time: string | undefined) => void;
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
   updateFormData: (data: Partial<BookingState['formData']>) => void;
   fetchAvailability: (selectedServices: SelectedService[], signal: AbortSignal) => Promise<void>;
+  fetchSlots: (selectedServices: SelectedService[], date: string, signal?: AbortSignal) => Promise<void>;
   resetBooking: () => void;
   fetchConfig: () => Promise<void>;
   fetchServices: () => Promise<void>;
@@ -81,18 +87,19 @@ interface BookingState {
 
 export const useBookingStore = create<BookingState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       language: 'es',
       theme: 'light',
       selectedDate: undefined,
+      selectedTime: undefined,
       currentStep: 1,
       formData: {
         fullName: '',
         email: '',
+        phone: '',
         selectedServices: [],
         serviceGroup: null,
         lockedGroupId: null,
-        guests: 1,
         specialRequests: '',
         privacyAccepted: false,
       },
@@ -104,6 +111,8 @@ export const useBookingStore = create<BookingState>()(
       availability: { available: [] },
       isAvailabilityLoading: false,
       availabilityError: null,
+      availableSlots: [],
+      isSlotsLoading: false,
       config: null,
       isConfigLoading: false,
       services: [],
@@ -113,7 +122,8 @@ export const useBookingStore = create<BookingState>()(
       setVisibility: (visibility) => set((state) => ({ 
         visibility: { ...state.visibility, ...visibility } 
       })),
-      setSelectedDate: (date) => set({ selectedDate: date }),
+      setSelectedDate: (date) => set({ selectedDate: date, selectedTime: undefined }),
+      setSelectedTime: (time) => set({ selectedTime: time }),
       setStep: (step) => set({ currentStep: step }),
       nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
       prevStep: () => set((state) => ({ currentStep: Math.max(1, state.currentStep - 1) })),
@@ -134,19 +144,35 @@ export const useBookingStore = create<BookingState>()(
           }
         }
       },
+      fetchSlots: async (selectedServices: SelectedService[], date: string, signal?: AbortSignal) => {
+        set({ isSlotsLoading: true, availableSlots: [] });
+        try {
+          const slots = await fetchSlots(
+            selectedServices.map(s => s.serviceId),
+            date,
+            signal
+          );
+          set({ availableSlots: slots, isSlotsLoading: false });
+        } catch (error: any) {
+          if (error.name !== 'CanceledError') {
+            set({ isSlotsLoading: false });
+          }
+        }
+      },
       setAvailability: (availability) => set({ availability }),
       setAvailabilityLoading: (isAvailabilityLoading) => set({ isAvailabilityLoading }),
       setAvailabilityError: (availabilityError) => set({ availabilityError }),
       resetBooking: () => set({
         selectedDate: undefined,
+        selectedTime: undefined,
         currentStep: 1,
         formData: {
           fullName: '',
           email: '',
+          phone: '',
           selectedServices: [],
           serviceGroup: null,
           lockedGroupId: null,
-          guests: 1,
           specialRequests: '',
           privacyAccepted: false,
         },
@@ -156,6 +182,7 @@ export const useBookingStore = create<BookingState>()(
           service: true,
         },
         availability: { available: [], limited: [], booked: [] },
+        availableSlots: [],
       }),
 
 

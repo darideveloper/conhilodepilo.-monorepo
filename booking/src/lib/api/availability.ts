@@ -19,3 +19,14 @@ export const fetchAvailability = async (serviceIds: string[], signal: AbortSigna
     }),
   };
 };
+
+export const fetchSlots = async (serviceIds: string[], date: string, signal?: AbortSignal): Promise<string[]> => {
+  const url = `${import.meta.env.PUBLIC_API_URL}availability/slots/?service_ids=${serviceIds.join(',')}&date=${date}`;
+  const response = await fetch(url, { signal });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch slots');
+  }
+
+  return await response.json();
+};
