@@ -217,11 +217,29 @@ class Booking(models.Model):
     client_phone = models.CharField(_("Client phone"), max_length=20, null=True, blank=True)
     status = models.CharField(_("Status"), max_length=20, choices=STATUS_CHOICES, default="PENDING", db_index=True)
     special_requests = models.TextField(_("Special requests"), null=True, blank=True)
+    GOOGLE_SYNC_CHOICES = [
+        ("PENDING", _("Pending")),
+        ("SUCCESS", _("Success")),
+        ("FAILURE", _("Failure")),
+        ("DISABLED", _("Disabled")),
+    ]
     google_event_id = models.CharField(_("Google event ID"), max_length=255, null=True, blank=True)
+    google_sync_status = models.CharField(
+        _("Google sync status"), max_length=20, choices=GOOGLE_SYNC_CHOICES, default="PENDING"
+    )
+    google_sync_error = models.TextField(_("Google sync error"), null=True, blank=True)
+    last_synced_at = models.DateTimeField(_("Last synced at"), null=True, blank=True)
     stripe_payment_id = models.CharField(_("Stripe payment ID"), max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.client_name} - {self.start_time}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and self.start_time:
+            # Recalculate end_time if start_time is updated or if it's a full save
+            if not kwargs.get("update_fields") or "start_time" in kwargs.get("update_fields"):
+                self.end_time = self.calculate_end_time()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Booking")

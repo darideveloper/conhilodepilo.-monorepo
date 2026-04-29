@@ -253,12 +253,13 @@ class EventDateOverrideAdmin(ModelAdminUnfoldBase):
 
 @admin.register(Booking)
 class BookingAdmin(ModelAdminUnfoldBase):
-    list_display = ("client_name", "start_time", "end_time", "status")
+    list_display = ("client_name", "start_time", "end_time", "status", "google_sync_status_badge")
     list_filter = ("status", "start_time")
     search_fields = ("client_name", "client_email")
     filter_horizontal = ("services",)
-    readonly_fields = ("end_time",)
-    
+    readonly_fields = ("end_time", "google_event_id", "google_sync_status", "google_sync_error", "last_synced_at")
+    actions = ["retry_google_calendar_sync"]
+
     fieldsets = (
         (_("Client Information"), {
             "fields": ("client_name", "client_email", "client_phone", "special_requests")
@@ -270,7 +271,46 @@ class BookingAdmin(ModelAdminUnfoldBase):
             "fields": ("services",)
         }),
         (_("Integrations"), {
-            "fields": ("google_event_id", "stripe_payment_id"),
+            "fields": ("stripe_payment_id",),
             "classes": ("collapse",)
         }),
+        (_("Google Calendar"), {
+            "fields": ("google_event_id", "google_sync_status", "google_sync_error", "last_synced_at"),
+        }),
     )
+
+    tabs = [
+        (_("Booking"), ["fieldsets:0", "fieldsets:1", "fieldsets:2"]),
+        (_("Integrations"), ["fieldsets:3"]),
+        (_("Google Calendar"), ["fieldsets:4"]),
+    ]
+
+    @admin.display(description=_("Google Sync"))
+    def google_sync_status_badge(self, obj):
+        colors = {
+            "SUCCESS": ("bg-green-100 text-green-800", "✓"),
+            "FAILURE": ("bg-red-100 text-red-800", "✗"),
+            "PENDING": ("bg-yellow-100 text-yellow-800", "…"),
+            "DISABLED": ("bg-gray-100 text-gray-500", "—"),
+        }
+        css, symbol = colors.get(obj.google_sync_status, ("bg-gray-100 text-gray-500", "?"))
+        return format_html(
+            '<span class="font-medium px-2 py-0.5 rounded text-xs {}">{} {}</span>',
+            css,
+            symbol,
+            obj.get_google_sync_status_display(),
+        )
+
+    @admin.action(description=_("Retry Google Calendar Sync"))
+    def retry_google_calendar_sync(self, request, queryset):
+        from utils.google_calendar import sync_booking_to_google
+        synced = 0
+        for booking in queryset:
+            sync_booking_to_google(booking)
+            booking.refresh_from_db(fields=["google_sync_status"])
+            if booking.google_sync_status == "SUCCESS":
+                synced += 1
+        self.message_user(
+            request,
+            _("{} of {} bookings synced successfully.").format(synced, queryset.count()),
+        )

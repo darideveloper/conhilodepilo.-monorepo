@@ -22,6 +22,11 @@ selenium>=4.40.0           # Browser automation for E2E tests
 django-unfold==0.77.1      # Modern Django admin theme
 django-solo>=2.3.0         # Singleton models for configuration
 
+# google calendar
+google-api-python-client>=2.0.0  # Google Calendar API client
+google-auth-httplib2>=0.2.0      # HTTP transport for Google auth
+google-auth-oauthlib>=1.0.0      # OAuth2 for Google APIs
+
 # tools
 requests>=2.32.3           # HTTP library for external API calls
 

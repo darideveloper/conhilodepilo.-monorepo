@@ -6,3 +6,6 @@ class BookingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'booking'
     verbose_name = _('Booking Management')
+
+    def ready(self):
+        import booking.signals  # noqa: F401

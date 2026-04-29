@@ -484,3 +484,19 @@ msgstr "Desconocido"
 
 #~ msgid "Search"
 #~ msgstr "Buscar"
+
+#: booking/admin.py:288
+msgid "Google Sync"
+msgstr "Sincronización con Google"
+
+#: booking/admin.py:304
+msgid "Retry Google Calendar Sync"
+msgstr "Reintentar sincronización con Google Calendar"
+
+#: booking/admin.py:315
+msgid "{} of {} bookings synced successfully."
+msgstr "{} de {} reservas sincronizadas correctamente."
+
+#: booking/admin.py:277 booking/admin.py:285
+msgid "Google Calendar"
+msgstr "Google Calendar"
