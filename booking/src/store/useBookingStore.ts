@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, type StateStorage, createJSONStorage } from 'zustand/middleware';
 import { fetchAvailability, fetchSlots } from '../lib/api/availability';
 import { fetchConfig as fetchAppConfig } from '../lib/api/endpoints/config';
 import { fetchServices as fetchAppServices, type ServiceCategory } from '../lib/api/endpoints/services';
@@ -85,9 +85,77 @@ interface BookingState {
   setAvailabilityError: (error: string | null) => void;
 }
 
+const hybridStorage: StateStorage = {
+  getItem: (name) => {
+    const localStr = localStorage.getItem(`${name}-local`);
+    const sessionStr = sessionStorage.getItem(`${name}-session`);
+    
+    if (!localStr && !sessionStr) return null;
+
+    const localParsed = localStr ? JSON.parse(localStr) : { state: {} };
+    const sessionParsed = sessionStr ? JSON.parse(sessionStr) : { state: {} };
+    
+    const mergedState = {
+      ...localParsed.state,
+      ...sessionParsed.state,
+      formData: {
+        ...(localParsed.state?.formData || {}),
+        ...(sessionParsed.state?.formData || {}),
+      }
+    };
+    
+    return JSON.stringify({
+      state: mergedState,
+      version: sessionParsed.version ?? localParsed.version
+    });
+  },
+  setItem: (name, value) => {
+    const parsed = JSON.parse(value);
+    const { state, version } = parsed;
+    
+    const localPart = {
+      state: {
+        language: state.language,
+        theme: state.theme,
+        formData: {
+          fullName: state.formData.fullName,
+          email: state.formData.email,
+          phone: state.formData.phone,
+        }
+      },
+      version
+    };
+    
+    const sessionPart = { 
+      state: {
+        ...state,
+      },
+      version
+    };
+    
+    // Remove local fields from sessionPart to avoid duplication
+    if (sessionPart.state) {
+      delete (sessionPart.state as any).language;
+      delete (sessionPart.state as any).theme;
+      if (sessionPart.state.formData) {
+        sessionPart.state.formData = { ...state.formData };
+        delete (sessionPart.state.formData as any).fullName;
+        delete (sessionPart.state.formData as any).email;
+        delete (sessionPart.state.formData as any).phone;
+      }
+    }
+    
+    localStorage.setItem(`${name}-local`, JSON.stringify(localPart));
+    sessionStorage.setItem(`${name}-session`, JSON.stringify(sessionPart));
+  },
+  removeItem: (name) => {
+    localStorage.removeItem(`${name}-local`);
+    sessionStorage.removeItem(`${name}-session`);
+  }
+};
 
 export const useBookingStore = create<BookingState>()(
-  persist(
+  persist<BookingState>(
     (set, get) => ({
       language: 'es',
       theme: 'light',
@@ -163,14 +231,12 @@ export const useBookingStore = create<BookingState>()(
       setAvailability: (availability) => set({ availability }),
       setAvailabilityLoading: (isAvailabilityLoading) => set({ isAvailabilityLoading }),
       setAvailabilityError: (availabilityError) => set({ availabilityError }),
-      resetBooking: () => set({
+      resetBooking: () => set((state) => ({
         selectedDate: undefined,
         selectedTime: undefined,
         currentStep: 1,
         formData: {
-          fullName: '',
-          email: '',
-          phone: '',
+          ...state.formData,
           selectedServices: [],
           serviceGroup: null,
           lockedGroupId: null,
@@ -184,7 +250,7 @@ export const useBookingStore = create<BookingState>()(
         },
         availability: { available: [], limited: [], booked: [] },
         availableSlots: [],
-      }),
+      })),
 
 
       fetchConfig: async () => {
@@ -209,10 +275,21 @@ export const useBookingStore = create<BookingState>()(
       },
     }),
     {
-      name: 'booking-storage',
+      name: 'booking-hybrid-storage',
+      storage: createJSONStorage(() => hybridStorage),
       partialize: (state) => {
-        const { visibility, config, isConfigLoading, services, isServicesLoading, ...rest } = state;
-        return rest;
+        const { 
+          visibility, 
+          config, 
+          isConfigLoading, 
+          services, 
+          isServicesLoading,
+          isAvailabilityLoading,
+          isSlotsLoading,
+          availabilityError,
+          ...rest 
+        } = state;
+        return rest as BookingState;
       },
       onRehydrateStorage: () => (state) => {
         if (!state) return;

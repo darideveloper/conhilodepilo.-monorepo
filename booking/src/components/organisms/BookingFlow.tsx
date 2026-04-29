@@ -5,7 +5,7 @@ import { BookingForm } from "./BookingForm"
 import { BookingServiceSelection } from "./BookingServiceSelection"
 
 
-export default function BookingFlow() {
+export default function BookingFlow({ initialServiceId }: { initialServiceId?: string }) {
   const currentStep = useBookingStore((state: any) => state.currentStep)
   const updateFormData = useBookingStore((state: any) => state.updateFormData)
   const setLanguage = useBookingStore((state: any) => state.setLanguage)
@@ -40,7 +40,7 @@ export default function BookingFlow() {
     }
 
     // 3. Handle Service (formerly tour)
-    const serviceQuery = urlParams.get('service') || urlParams.get('tour');
+    const serviceQuery = initialServiceId || urlParams.get('service') || urlParams.get('tour');
     if (serviceQuery) {
       // Find the category for this service to pre-fill Step 1
       const category = servicesData.find((cat: any) => 
@@ -52,16 +52,15 @@ export default function BookingFlow() {
         updateFormData({ lockedGroupId: category.group_id });
       }
 
-      const isAlreadyAdded = (useBookingStore.getState() as any).formData.selectedServices.some(
-        (s: any) => s.serviceId === serviceQuery
-      );
+      const currentServices = (useBookingStore.getState() as any).formData.selectedServices;
+      const isExactlyThisSelected = 
+        currentServices.length === 1 && 
+        currentServices[0].serviceId === serviceQuery &&
+        (category ? currentServices[0].serviceTypeId === category.id : true);
 
-      if (!isAlreadyAdded) {
-        const currentServices = (useBookingStore.getState() as any).formData.selectedServices;
-
+      if (!isExactlyThisSelected) {
         updateFormData({ 
           selectedServices: [
-            ...currentServices,
             { 
               serviceId: serviceQuery,
               serviceTypeId: category ? category.id : (null as any)
@@ -70,13 +69,13 @@ export default function BookingFlow() {
         });
       }
       
-      if (urlParams.get('service') || urlParams.get('tour')) {
+      if (urlParams.get('service') || urlParams.get('tour') || initialServiceId) {
         setVisibility({ service: false });
       }
     }
 
     // 4. Handle Service Group (Ignored per requirements)
-  }, [updateFormData, setLanguage, setTheme, setVisibility, servicesData])
+  }, [updateFormData, setLanguage, setTheme, setVisibility, servicesData, initialServiceId])
 
   // Apply brand color
   useEffect(() => {

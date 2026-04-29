@@ -169,7 +169,7 @@ export function BookingCalendar() {
                     <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />
                   ))
                 ) : availableSlots.length > 0 ? (
-                  availableSlots.map((time) => (
+                  availableSlots.map((time: string) => (
                     <button
                       key={time}
                       onClick={() => setSelectedTime(time)}
