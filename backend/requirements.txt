@@ -33,3 +33,6 @@ requests>=2.32.3           # HTTP library for external API calls
 # storage
 django-storages==1.14.4    # Custom storage backends (S3, etc.)
 boto3==1.34.162            # AWS SDK for Python
+
+# stripe
+stripe>=11.4.0             # Stripe Python library

@@ -18,6 +18,11 @@ def booking_post_save(sender, instance, created, **kwargs):
     }:
         return
 
+    # 3. Skip sync if status is PENDING.
+    # We only sync when confirmed or paid.
+    if instance.status == 'PENDING':
+        return
+
     from utils.google_calendar import sync_booking_to_google
     sync_booking_to_google(instance)
 

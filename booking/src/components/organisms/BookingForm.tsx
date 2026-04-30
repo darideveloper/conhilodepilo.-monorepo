@@ -49,7 +49,7 @@ export function BookingForm() {
     const dateStr = `${year}-${month}-${day}`;
 
     try {
-      await submitBooking({
+      const response = await submitBooking({
         clientName: formData.fullName,
         clientEmail: formData.email,
         clientPhone: formData.phone,
@@ -58,7 +58,17 @@ export function BookingForm() {
         startTime: selectedTime,
         specialRequests: formData.specialRequests,
       })
-      setIsSubmitted(true)
+
+      if (response.payment_required && response.checkout_url) {
+        useBookingStore.getState().resetBooking()
+        if (window.top) {
+          window.top.location.href = response.checkout_url
+        } else {
+          window.location.href = response.checkout_url
+        }
+      } else {
+        setIsSubmitted(true)
+      }
     } catch (err: any) {
       console.error('Error submitting booking:', err)
       setError(err.message || (language === 'es' ? 'Error al procesar la reserva' : 'Error processing booking'))

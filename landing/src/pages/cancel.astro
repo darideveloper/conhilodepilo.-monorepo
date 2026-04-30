@@ -1,0 +1,48 @@
+---
+import Layout from '../layouts/Layout.astro'
+import { ReactIcon } from '../components/atoms/ReactIcon'
+---
+
+<Layout title="Pago Cancelado | Con Hilo Depilo">
+  <section class='py-24 md:py-32 bg-ui-bg-light min-h-[80vh] flex items-center justify-center relative overflow-hidden'>
+    <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brand-secondary/5 rounded-full blur-3xl"></div>
+
+    <div class='container max-w-2xl relative z-10'>
+      <div class='bg-white p-10 md:p-16 rounded-[3rem] shadow-xl border border-ui-border-light flex flex-col items-center text-center gap-8'>
+        <div class='w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center'>
+          <ReactIcon
+            client:load
+            name='LuXCircle'
+            size={48}
+            className='text-red-500'
+          />
+        </div>
+
+        <div class='flex flex-col gap-4'>
+          <h1 class='text-3xl md:text-4xl font-black tracking-tight text-ui-text-main'>
+            Pago Incompleto
+          </h1>
+          <p class='text-ui-text-muted text-lg leading-relaxed'>
+            Has cancelado el proceso de pago. Tu cita no ha sido agendada. Puedes intentar realizar la reserva nuevamente.
+          </p>
+        </div>
+
+        <div class='flex flex-col sm:flex-row gap-4 mt-4 w-full sm:w-auto'>
+          <a
+            href='/#servicios'
+            class='bg-brand-primary text-white px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs md:text-sm hover:bg-brand-primary-dark hover:scale-[1.02] active:scale-95 transition-all shadow-md w-full sm:w-auto'
+          >
+            Ver Servicios
+          </a>
+          <a
+            href='/'
+            class='bg-white text-ui-text-main border border-ui-border-light px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs md:text-sm hover:bg-ui-bg-light hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto'
+          >
+            Volver al Inicio
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

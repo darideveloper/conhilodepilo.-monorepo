@@ -4,9 +4,11 @@ from rest_framework.permissions import AllowAny
 from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, time
+import stripe
 from .models import CompanyProfile, CompanyWeekdaySlot, EventType, Event, Booking
 from .serializers import CompanyProfileSerializer, BusinessHoursSerializer, EventTypeSerializer
 from utils.availability import get_available_dates, get_available_slots
+from utils.stripe_utils import create_checkout_session
 
 class CreateBookingView(APIView):
     """
@@ -48,6 +50,10 @@ class CreateBookingView(APIView):
         total_duration = sum(s.duration_minutes for s in services)
         end_dt = start_dt + timezone.timedelta(minutes=total_duration)
 
+        # Check if any service requires pre-payment
+        is_pre_paid = any(s.event_type.payment_model == "PRE-PAID" for s in services)
+        status = "PENDING" if is_pre_paid else "CONFIRMED"
+
         booking = Booking.objects.create(
             start_time=start_dt,
             end_time=end_dt,
@@ -55,17 +61,31 @@ class CreateBookingView(APIView):
             client_email=client_email,
             client_phone=client_phone,
             special_requests=special_requests,
-            status="PENDING"
+            status=status
         )
         booking.services.set(services)
         
-        return Response({
+        response_data = {
             "message": "Booking created successfully",
             "booking_id": booking.id,
             "client_name": booking.client_name,
             "client_email": booking.client_email,
-            "start_time": booking.start_time.isoformat()
-        }, status=201)
+            "start_time": booking.start_time.isoformat(),
+            "payment_required": is_pre_paid
+        }
+
+        if is_pre_paid:
+            total_amount = sum(s.price for s in services)
+            company = CompanyProfile.get_solo()
+            try:
+                session = create_checkout_session(booking, total_amount, company.currency)
+                response_data["checkout_url"] = session.url
+            except stripe.StripeError:
+                # If we cannot create the Stripe session, delete the booking and return error
+                booking.delete()
+                return Response({"error": "Payment service is currently unavailable. Please try again later."}, status=503)
+
+        return Response(response_data, status=201)
 
 class CompanyConfigView(APIView):
     """
@@ -146,3 +166,46 @@ class AvailabilitySlotsView(APIView):
             
         slots = get_available_slots(target_date, ids)
         return Response(slots)
+
+class StripeWebhookView(APIView):
+    """
+    Public endpoint to handle Stripe webhooks.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        payload = request.body
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+        if not endpoint_secret:
+            return Response({"error": "Webhook secret not configured"}, status=400)
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, endpoint_secret
+            )
+        except ValueError as e:
+            # Invalid payload
+            return Response(status=400)
+        except stripe.error.SignatureVerificationError as e:
+            # Invalid signature
+            return Response(status=400)
+
+        # Handle the event
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            booking_id = session.get('metadata', {}).get('booking_id')
+            if booking_id:
+                try:
+                    booking = Booking.objects.get(id=booking_id)
+                    if booking.status == 'PENDING':
+                        booking.status = 'PAID'
+                        booking.stripe_payment_id = session.get('payment_intent') or session.get('id')
+                        booking.save(update_fields=['status', 'stripe_payment_id'])
+                        
+                        # Note: Google Calendar sync will be triggered by a signal
+                except Booking.DoesNotExist:
+                    pass
+
+        return Response(status=200)

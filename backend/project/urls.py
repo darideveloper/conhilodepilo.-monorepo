@@ -10,7 +10,8 @@ from booking.views import (
     ServicesListView, 
     AvailabilityView, 
     AvailabilitySlotsView,
-    CreateBookingView
+    CreateBookingView,
+    StripeWebhookView
 )
 
 # Initialize DRF Router
@@ -30,6 +31,7 @@ urlpatterns = [
     path("api/availability/days/", AvailabilityView.as_view(), name="api-availability-days"),
     path("api/availability/slots/", AvailabilitySlotsView.as_view(), name="api-availability-slots"),
     path("api/bookings/", CreateBookingView.as_view(), name="api-bookings"),
+    path("api/stripe/webhook/", StripeWebhookView.as_view(), name="stripe-webhook"),
     path("api/", include(router.urls)),
 ]
 
