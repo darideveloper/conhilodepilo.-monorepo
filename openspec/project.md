@@ -57,7 +57,7 @@ A Django-based administration dashboard and REST API that manages the entire eco
 - `Booking` — appointments; linked to services (M2M), stores Stripe payment ID and Google Calendar event ID
 
 ## Key Conventions
-- **Configuration:** Strictly environment-variable-first (`python-dotenv`). Two-level `.env` system.
+- **Configuration:** Strictly environment-variable-first (`python-dotenv`). Two-level `.env` system. Consolidates base URL in a single `HOST` variable (see `openspec/specs/backend-host/spec.md`).
 - **API Standards:** Centralized error handling (`project/handlers.py`) and metadata-rich pagination (`project/pagination.py`).
 - **Auth:** DRF Token authentication (primary) + Session authentication (admin).
 - **Testing:** Django test framework with SQLite test DB. Selenium for E2E/browser tests. Test files follow `tests*.py` naming per app.

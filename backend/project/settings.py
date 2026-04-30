@@ -22,7 +22,15 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
+from urllib.parse import urlparse
+
+HOST = os.getenv("HOST", "")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
+if HOST:
+    host_name = urlparse(HOST).hostname
+    if host_name and host_name not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host_name)
 
 print(f"DEBUG: {DEBUG}")
 print(f"ENV: {ENV}")
@@ -146,7 +154,6 @@ LOCALE_PATHS = [
 
 # Core Identity
 COMPANY_NAME = os.getenv("COMPANY_NAME")
-SITE_URL = os.getenv("SITE_URL")
 
 # Integrations
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")

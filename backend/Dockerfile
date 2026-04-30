@@ -38,6 +38,7 @@ ARG STORAGE_AWS
 ARG ENV
 ARG DEBUG
 ARG ALLOWED_HOSTS
+ARG HOST
 
 # Export them as ENVs
 ENV SECRET_KEY=${SECRET_KEY} \
@@ -60,7 +61,8 @@ ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 
 ENV ENV=${ENV} \
     DEBUG=${DEBUG} \
-    ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    ALLOWED_HOSTS=${ALLOWED_HOSTS} \
+    HOST=${HOST}
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

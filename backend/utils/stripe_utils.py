@@ -26,8 +26,8 @@ def create_checkout_session(booking, total_amount: Decimal, currency: str) -> st
     amount_in_cents = int(total_amount * multiplier)
 
     # Prepare landing site URL
-    # Assuming settings.SITE_URL is the base URL without trailing slash
-    site_url = settings.SITE_URL.rstrip('/') if settings.SITE_URL else "http://localhost:3000"
+    # Assuming settings.HOST is the base URL without trailing slash
+    site_url = settings.HOST.rstrip('/') if settings.HOST else "http://localhost:3000"
 
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
