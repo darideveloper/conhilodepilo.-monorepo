@@ -258,7 +258,7 @@ class BookingAdmin(ModelAdminUnfoldBase):
     search_fields = ("client_name", "client_email")
     filter_horizontal = ("services",)
     readonly_fields = ("end_time", "google_event_id", "google_sync_status", "google_sync_error", "last_synced_at")
-    actions = ["retry_google_calendar_sync"]
+    actions = ["retry_google_calendar_sync", "reconcile_selected_bookings_with_google"]
 
     fieldsets = (
         (_("Client Information"), {
@@ -307,10 +307,31 @@ class BookingAdmin(ModelAdminUnfoldBase):
         synced = 0
         for booking in queryset:
             sync_booking_to_google(booking)
-            booking.refresh_from_db(fields=["google_sync_status"])
-            if booking.google_sync_status == "SUCCESS":
+            if Booking.objects.get(pk=booking.pk).google_sync_status == "SUCCESS":
                 synced += 1
         self.message_user(
             request,
             _("{} of {} bookings synced successfully.").format(synced, queryset.count()),
+        )
+
+    @admin.action(description=_("Reconcile selected bookings with Google"))
+    def reconcile_selected_bookings_with_google(self, request, queryset):
+        from utils.google_calendar import sync_booking_to_google
+        from django.db.models import F
+        
+        # 1. Failures
+        failures = queryset.filter(google_sync_status="FAILURE")
+        # 2. Drift
+        drift = queryset.filter(google_sync_status="SUCCESS", last_synced_at__lt=F("updated_at"))
+        
+        to_sync = (failures | drift).distinct()
+        synced = 0
+        for booking in to_sync:
+            sync_booking_to_google(booking)
+            if Booking.objects.get(pk=booking.pk).google_sync_status == "SUCCESS":
+                synced += 1
+                
+        self.message_user(
+            request,
+            _("Reconciliation complete: {} bookings updated.").format(synced),
         )

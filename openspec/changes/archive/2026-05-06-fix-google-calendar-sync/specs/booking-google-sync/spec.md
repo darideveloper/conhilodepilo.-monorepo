@@ -1,31 +1,4 @@
-# booking-google-sync Specification
-
-## Purpose
-TBD - created by archiving change add-google-calendar-sync. Update Purpose after archive.
-## Requirements
-### Requirement: Booking Google Sync State Fields
-The `Booking` model MUST store three additional fields to track synchronization state with Google Calendar:
-- `google_sync_status`: CharField with choices `PENDING | SUCCESS | FAILURE | DISABLED`, default `PENDING`
-- `google_sync_error`: TextField (null, blank) — stores error message on failure, cleared on success
-- `last_synced_at`: DateTimeField (null, blank) — updated on each successful sync
-
-These complement the existing `google_event_id` field already present on the model.
-
-#### Scenario: Initial booking has PENDING status
-- **WHEN** a new `Booking` is created in the admin
-- **THEN** `google_sync_status` defaults to `"PENDING"` before the signal fires
-
-#### Scenario: Status after successful sync
-- **WHEN** `sync_booking_to_google` completes without error
-- **THEN** `google_sync_status` is set to `"SUCCESS"`
-- **AND** `google_sync_error` is cleared
-- **AND** `last_synced_at` is updated to the current UTC time
-
-#### Scenario: Status after failed sync
-- **WHEN** the Google Calendar API returns an error
-- **THEN** `google_sync_status` is set to `"FAILURE"`
-- **AND** `google_sync_error` holds the error detail
-- **AND** the booking save is NOT rolled back (calendar errors must not block booking creation)
+## MODIFIED Requirements
 
 ### Requirement: Automatic Sync via Django Signals
 The system MUST automatically sync `Booking` changes to Google Calendar via Django signals registered in `dashboard/booking/signals.py` and connected in `BookingConfig.ready()`. All sync invocations MUST be deferred via `transaction.on_commit(...)` so they only fire after the surrounding DB transaction commits.
@@ -69,6 +42,8 @@ The handler MUST NOT depend on `created=True` being skipped — explicit sync ca
 #### Scenario: PENDING booking does not sync
 - **WHEN** a booking with `status="PENDING"` is created or saved
 - **THEN** no calendar API call is made
+
+## ADDED Requirements
 
 ### Requirement: Cancelled Booking Visual Marker
 When a booking transitions to `status="CANCELLED"` and has a non-null `google_event_id`, the system MUST patch the existing event so its `summary` is prefixed with `"[CANCELLED] "`. The event MUST remain on the calendar (not deleted) so it serves as a historical record. The `google_event_id` MUST be retained.
@@ -117,4 +92,3 @@ The booking creation MUST be wrapped in `transaction.atomic()` so `transaction.o
 #### Scenario: API creates a PENDING (pre-paid) booking
 - **WHEN** `CreateBookingView` creates a booking with status `"PENDING"`
 - **THEN** `sync_booking_to_google` is NOT scheduled
-

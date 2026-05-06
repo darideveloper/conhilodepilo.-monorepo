@@ -230,7 +230,12 @@ class Booking(models.Model):
     )
     google_sync_error = models.TextField(_("Google sync error"), null=True, blank=True)
     last_synced_at = models.DateTimeField(_("Last synced at"), null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     stripe_payment_id = models.CharField(_("Stripe payment ID"), max_length=255, null=True, blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initial_status = self.status
 
     def __str__(self):
         return f"{self.client_name} - {self.start_time}"
@@ -241,6 +246,7 @@ class Booking(models.Model):
             if not kwargs.get("update_fields") or "start_time" in kwargs.get("update_fields"):
                 self.end_time = self.calculate_end_time()
         super().save(*args, **kwargs)
+        self._initial_status = self.status
 
     class Meta:
         verbose_name = _("Booking")
@@ -253,14 +259,3 @@ class Booking(models.Model):
         total_duration = sum(event.duration_minutes for event in self.services.all())
         from datetime import timedelta
         return self.start_time + timedelta(minutes=total_duration)
-
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
-from datetime import timedelta
-
-@receiver(m2m_changed, sender=Booking.services.through)
-def update_booking_end_time(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
-        total_duration = sum(event.duration_minutes for event in instance.services.all())
-        instance.end_time = instance.start_time + timedelta(minutes=total_duration)
-        instance.save(update_fields=["end_time"])

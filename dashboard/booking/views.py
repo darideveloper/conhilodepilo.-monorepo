@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -9,6 +10,7 @@ from .models import CompanyProfile, CompanyWeekdaySlot, EventType, Event, Bookin
 from .serializers import CompanyProfileSerializer, BusinessHoursSerializer, EventTypeSerializer
 from utils.availability import get_available_dates, get_available_slots
 from utils.stripe_utils import create_checkout_session
+from utils.google_calendar import sync_booking_to_google
 
 class CreateBookingView(APIView):
     """
@@ -54,36 +56,45 @@ class CreateBookingView(APIView):
         is_pre_paid = any(s.event_type.payment_model == "PRE-PAID" for s in services)
         status = "PENDING" if is_pre_paid else "CONFIRMED"
 
-        booking = Booking.objects.create(
-            start_time=start_dt,
-            end_time=end_dt,
-            client_name=client_name,
-            client_email=client_email,
-            client_phone=client_phone,
-            special_requests=special_requests,
-            status=status
-        )
-        booking.services.set(services)
-        
-        response_data = {
-            "message": "Booking created successfully",
-            "booking_id": booking.id,
-            "client_name": booking.client_name,
-            "client_email": booking.client_email,
-            "start_time": booking.start_time.isoformat(),
-            "payment_required": is_pre_paid
-        }
+        try:
+            with transaction.atomic():
+                booking = Booking.objects.create(
+                    start_time=start_dt,
+                    end_time=end_dt,
+                    client_name=client_name,
+                    client_email=client_email,
+                    client_phone=client_phone,
+                    special_requests=special_requests,
+                    status=status
+                )
+                booking.services.set(services)
 
-        if is_pre_paid:
-            total_amount = sum(s.price for s in services)
-            company = CompanyProfile.get_solo()
-            try:
-                session = create_checkout_session(booking, total_amount, company.currency)
-                response_data["checkout_url"] = session.url
-            except stripe.StripeError:
-                # If we cannot create the Stripe session, delete the booking and return error
-                booking.delete()
+                if status == "CONFIRMED":
+                    transaction.on_commit(lambda: sync_booking_to_google(booking))
+                
+                response_data = {
+                    "message": "Booking created successfully",
+                    "booking_id": booking.id,
+                    "client_name": booking.client_name,
+                    "client_email": booking.client_email,
+                    "start_time": booking.start_time.isoformat(),
+                    "payment_required": is_pre_paid
+                }
+
+                if is_pre_paid:
+                    total_amount = sum(s.price for s in services)
+                    company = CompanyProfile.get_solo()
+                    try:
+                        session = create_checkout_session(booking, total_amount, company.currency)
+                        response_data["checkout_url"] = session.url
+                    except stripe.StripeError:
+                        # Rollback is automatic due to transaction.atomic()
+                        raise Exception("Stripe session creation failed")
+
+        except Exception as e:
+            if "Stripe" in str(e):
                 return Response({"error": "Payment service is currently unavailable. Please try again later."}, status=503)
+            raise e
 
         return Response(response_data, status=201)
 

@@ -1,6 +1,4 @@
 name: Local
 variables:
   - name: base_url
-    value: http://localhost:8000
-    type: string
-    enabled: true
+    value: https://dashboard.conhilodepilo.localhost

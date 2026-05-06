@@ -500,3 +500,11 @@ msgstr "{} de {} reservas sincronizadas correctamente."
 #: booking/admin.py:277 booking/admin.py:285
 msgid "Google Calendar"
 msgstr "Google Calendar"
+
+#: booking/admin.py:318
+msgid "Reconcile selected bookings with Google"
+msgstr "Reconciliar reservas seleccionadas con Google"
+
+#: booking/admin.py:335
+msgid "Reconciliation complete: {} bookings updated."
+msgstr "Reconciliación completada: {} reservas actualizadas."
