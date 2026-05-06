@@ -11,7 +11,7 @@ fi
 
 echo "Creating new dev session: $SESSION_NAME"
 # Create the session and the first window for dashboard
-tmux new-session -d -s $SESSION_NAME -n 'dashboard' -c "$PWD/dashboard" 'source venv/bin/activate && python manage.py runserver'
+tmux new-session -d -s $SESSION_NAME -n 'dashboard' -c "$PWD/dashboard" 'source venv/bin/activate && portless dashboard.conhilodepilo --app-port 8000 -- python manage.py runserver'
 
 # Create a window for the booking frontend
 tmux new-window -n 'booking' -c "$PWD/booking" 'npm run dev'

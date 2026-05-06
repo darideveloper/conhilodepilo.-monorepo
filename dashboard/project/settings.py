@@ -25,7 +25,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 from urllib.parse import urlparse
 
 HOST = os.getenv("HOST", "")
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
 
 if HOST:
     host_name = urlparse(HOST).hostname

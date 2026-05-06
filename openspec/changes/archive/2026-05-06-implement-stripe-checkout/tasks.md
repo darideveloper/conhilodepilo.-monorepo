@@ -38,5 +38,5 @@
 - [x] **Frontend Manual Test**:
     - [x] Verify `POST-PAID` flow shows success message directly.
     - [x] Verify `PRE-PAID` flow redirects to Stripe.
-- [ ] **End-to-End**:
-    - [ ] Complete a full payment flow using Stripe Test Cards.
+- [x] **End-to-End**:
+    - [x] Complete a full payment flow using Stripe Test Cards.
