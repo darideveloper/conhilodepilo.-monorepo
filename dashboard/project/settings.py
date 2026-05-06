@@ -32,6 +32,9 @@ if HOST:
     if host_name and host_name not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(host_name)
 
+# Trust the X-Forwarded-Proto header to detect HTTPS behind a proxy
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 print(f"DEBUG: {DEBUG}")
 print(f"ENV: {ENV}")
 
