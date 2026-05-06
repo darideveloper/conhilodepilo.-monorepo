@@ -10,11 +10,11 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env first to get ENV value
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env", override=True)
 ENV = os.getenv("ENV", "dev")
 
 # Load environment-specific file
-load_dotenv(BASE_DIR / f".env.{ENV}")
+load_dotenv(BASE_DIR / f".env.{ENV}", override=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")

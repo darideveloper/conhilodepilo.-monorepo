@@ -1,6 +1,7 @@
 import os
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework import serializers
 
 def get_media_url(object_or_url: object) -> str:
     url_str = ""
@@ -12,6 +13,21 @@ def get_media_url(object_or_url: object) -> str:
     if "s3.amazonaws.com" not in url_str and "digitaloceanspaces" not in url_str:
         return f"{settings.HOST}{url_str}"
     return url_str
+
+class AbsoluteImageField(serializers.ImageField):
+    def to_representation(self, value):
+        if not value:
+            return None
+        
+        # If HOST is set, use the specialized utility
+        if getattr(settings, 'HOST', None):
+            return get_media_url(value)
+            
+        # Fallback to default DRF behavior (request-based) if HOST is missing
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(value.url)
+        return value.url
 
 def get_test_image(image_name: str = "test.webp") -> SimpleUploadedFile:
     app_path = os.path.dirname(os.path.abspath(__file__))

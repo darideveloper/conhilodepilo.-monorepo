@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from utils.media import AbsoluteImageField
 from .models import CompanyProfile, CompanyWeekdaySlot, Event, EventType
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='name')
+    logo = AbsoluteImageField(read_only=True)
 
     class Meta:
         model = CompanyProfile
@@ -32,6 +34,7 @@ class BusinessHoursSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source='name')
     duration = serializers.IntegerField(source='duration_minutes')
+    image = AbsoluteImageField(read_only=True)
 
     class Meta:
         model = Event
@@ -40,6 +43,7 @@ class EventSerializer(serializers.ModelSerializer):
 class EventTypeSerializer(serializers.ModelSerializer):
     services = EventSerializer(source='events', many=True, read_only=True)
     group_id = serializers.ReadOnlyField(source='group.id')
+    image = AbsoluteImageField(read_only=True)
 
     class Meta:
         model = EventType
