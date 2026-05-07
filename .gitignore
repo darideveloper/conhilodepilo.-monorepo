@@ -37,4 +37,27 @@ bruno/.env
 # Ai agents
 .claude/
 CLAUDE.md
+stagehand/claude.md
 .gemini
+
+node_modules/
+
+# Stagehand / Playwright
+stagehand/dist/
+stagehand/build/
+stagehand-cache/
+cache/
+act-cache/
+agent-cache/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache
+downloads/
+screenshots/
+videos/
+user_data/
+.browserbase/
+stagehand.log
+logs/
+.cursorrules
