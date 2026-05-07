@@ -231,6 +231,7 @@ class Booking(models.Model):
     google_sync_error = models.TextField(_("Google sync error"), null=True, blank=True)
     last_synced_at = models.DateTimeField(_("Last synced at"), null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     stripe_payment_id = models.CharField(_("Stripe payment ID"), max_length=255, null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
@@ -259,3 +260,10 @@ class Booking(models.Model):
         total_duration = sum(event.duration_minutes for event in self.services.all())
         from datetime import timedelta
         return self.start_time + timedelta(minutes=total_duration)
+
+class ProcessedStripeEvent(models.Model):
+    event_id = models.CharField(max_length=255, unique=True)
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    def __repr__(self):
+        return f"<ProcessedStripeEvent {self.event_id}>"

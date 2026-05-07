@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.utils import IntegrityError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -6,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, time
 import stripe
-from .models import CompanyProfile, CompanyWeekdaySlot, EventType, Event, Booking
+from .models import CompanyProfile, CompanyWeekdaySlot, EventType, Event, Booking, ProcessedStripeEvent
 from .serializers import CompanyProfileSerializer, BusinessHoursSerializer, EventTypeSerializer
 from utils.availability import get_available_dates, get_available_slots
 from utils.stripe_utils import create_checkout_session
@@ -178,11 +179,16 @@ class AvailabilitySlotsView(APIView):
         slots = get_available_slots(target_date, ids)
         return Response(slots)
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
+@method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookView(APIView):
     """
     Public endpoint to handle Stripe webhooks.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request, *args, **kwargs):
         payload = request.body
@@ -199,9 +205,15 @@ class StripeWebhookView(APIView):
         except ValueError as e:
             # Invalid payload
             return Response(status=400)
-        except stripe.error.SignatureVerificationError as e:
+        except stripe.SignatureVerificationError as e:
             # Invalid signature
             return Response(status=400)
+
+        try:
+            with transaction.atomic():
+                ProcessedStripeEvent.objects.create(event_id=event.get('id'))
+        except IntegrityError:
+            return Response(status=200)
 
         # Handle the event
         if event['type'] == 'checkout.session.completed':

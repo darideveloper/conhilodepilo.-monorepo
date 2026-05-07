@@ -22,6 +22,10 @@ def create_checkout_session(booking, total_amount: Decimal, currency: str) -> st
     Creates a Stripe Checkout session for a given booking.
     Converts the total_amount to the smallest currency unit.
     """
+    from booking.models import CompanyProfile
+    profile = CompanyProfile.get_solo()
+    company_name = profile.name if profile.name else "Booking"
+
     multiplier = get_currency_multiplier(currency)
     amount_in_cents = int(total_amount * multiplier)
 
@@ -34,7 +38,7 @@ def create_checkout_session(booking, total_amount: Decimal, currency: str) -> st
             'price_data': {
                 'currency': currency.lower(),
                 'product_data': {
-                    'name': 'Reserva - Con Hilo Depilo',
+                    'name': company_name,
                     'description': f'Reserva para {booking.client_name}',
                 },
                 'unit_amount': amount_in_cents,

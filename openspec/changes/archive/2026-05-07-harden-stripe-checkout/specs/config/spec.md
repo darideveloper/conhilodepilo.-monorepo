@@ -1,8 +1,7 @@
-# config Specification
+# config Spec Delta — harden-stripe-checkout
 
-## Purpose
-TBD - created by archiving change implement-stripe-checkout. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
+
 ### Requirement: Environment-Driven Configuration
 The system SHALL use environment variables for all Stripe-related credentials and operational tunables, and SHALL document every required variable in the committed `.env.example` files so that a fresh checkout can be configured without reading source code.
 
@@ -23,12 +22,3 @@ The system SHALL use environment variables for all Stripe-related credentials an
 - **WHEN** Django settings are loaded
 - **THEN** `settings.STRIPE_PENDING_BOOKING_TTL_HOURS` SHALL be read from the environment
 - **AND** SHALL default to `24` when the variable is unset
-
-### Requirement: Application Output Mode
-The build configuration for the booking application MUST explicitly define its output as static to prevent accidental SSR deployment.
-
-#### Scenario: Astro Configuration
-- **GIVEN** the `booking/astro.config.mjs` file
-- **WHEN** the `defineConfig` object is evaluated
-- **THEN** the `output` property MUST be set to `'static'`.
-

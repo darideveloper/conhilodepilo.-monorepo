@@ -1,17 +1,6 @@
-# webhook Specification
+# webhook Spec Delta — harden-stripe-checkout
 
-## Purpose
-TBD - created by archiving change implement-stripe-checkout. Update Purpose after archive.
-## Requirements
-### Requirement: Webhook Event Processing
-The dashboard SHALL expose a public endpoint to process Stripe webhook events and update booking statuses.
-
-#### Scenario: Successful Payment Webhook
-- **GIVEN** a valid `checkout.session.completed` webhook event is received
-- **WHEN** the `booking_id` in the session metadata matches an existing `PENDING` booking
-- **THEN** the dashboard SHALL update the booking status to `PAID`
-- **AND** the dashboard SHALL store the `stripe_payment_id`
-- **AND** the Google Calendar sync SHALL be triggered for this booking
+## MODIFIED Requirements
 
 ### Requirement: Webhook Security Verification
 The dashboard SHALL verify the authenticity of all incoming Stripe webhooks using the SDK's top-level (non-legacy) exception API and SHALL declare an explicit, session-independent authentication posture.
@@ -29,6 +18,8 @@ The dashboard SHALL verify the authenticity of all incoming Stripe webhooks usin
 - **THEN** `authentication_classes` SHALL be the empty list `[]`
 - **AND** the `dispatch` method SHALL be decorated with `csrf_exempt`
 - **AND** a POST request without any session cookie or CSRF token SHALL reach the handler (subject only to signature verification)
+
+## ADDED Requirements
 
 ### Requirement: Webhook Idempotency
 The dashboard SHALL process each Stripe webhook event at most once, regardless of how many times Stripe redelivers it.
@@ -52,4 +43,3 @@ The dashboard SHALL process each Stripe webhook event at most once, regardless o
 - **THEN** exactly one SHALL successfully insert the event ID row
 - **AND** the other SHALL fail with `IntegrityError` and short-circuit to `200 OK`
 - **AND** the booking SHALL be updated exactly once
-
