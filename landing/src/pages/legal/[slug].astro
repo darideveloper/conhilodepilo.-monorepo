@@ -15,7 +15,7 @@ const { Content } = await render(entry);
 ---
 
 <Layout title={entry.data.title}>
-	<div class="max-w-[800px] mx-auto px-6 py-24 prose prose-invert prose-brand">
+	<div class="max-w-[800px] mx-auto px-6 py-24 prose prose-brand">
 		<Content />
 	</div>
 </Layout>
@@ -26,8 +26,8 @@ const { Content } = await render(entry);
     /* Styling for the legal content since we are using tailwind v4 and might not have prose by default or need specific tweaks */
     .prose h1 { @apply text-3xl font-bold mb-8 text-brand-primary; }
     .prose h2 { @apply text-2xl font-bold mt-12 mb-4 text-brand-secondary; }
-    .prose p { @apply mb-4 leading-relaxed opacity-80; }
-    .prose ul { @apply list-disc pl-6 mb-6 space-y-2 opacity-80; }
-    .prose strong { @apply text-white opacity-100; }
-    .prose hr { @apply border-white/10 my-12; }
+    .prose p { @apply mb-4 leading-relaxed text-ui-text-main/80; }
+    .prose ul { @apply list-disc pl-6 mb-6 space-y-2 text-ui-text-main/80; }
+    .prose strong { @apply text-brand-primary font-bold; }
+    .prose hr { @apply border-ui-text-main/10 my-12; }
 </style>

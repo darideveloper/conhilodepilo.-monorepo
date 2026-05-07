@@ -40,3 +40,11 @@ The success and cancellation landing pages SHALL display the brand logo to maint
 - **GIVEN** a user is on the `/cancel` page
 - **THEN** the brand logo (`/logo.webp`) SHALL be displayed at the top of the status card, replacing the status icon circle.
 
+### Requirement: Brand Text Highlighting
+The landing site SHALL use the brand's primary color for bold text highlights to reinforce visual identity.
+
+#### Scenario: Bold text in content
+- **GIVEN** any component or MDX content using `<strong>` or `**bold**`
+- **THEN** the text SHALL be rendered in the `brand-primary` color
+- **AND** have a bold font weight.
+
