@@ -211,20 +211,20 @@ class StripeWebhookView(APIView):
 
         try:
             with transaction.atomic():
-                ProcessedStripeEvent.objects.create(event_id=event.get('id'))
+                ProcessedStripeEvent.objects.create(event_id=event.id)
         except IntegrityError:
             return Response(status=200)
 
         # Handle the event
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            booking_id = session.get('metadata', {}).get('booking_id')
+        if event.type == 'checkout.session.completed':
+            session = event.data.object
+            booking_id = session.metadata.get('booking_id') if session.metadata else None
             if booking_id:
                 try:
                     booking = Booking.objects.get(id=booking_id)
                     if booking.status == 'PENDING':
                         booking.status = 'PAID'
-                        booking.stripe_payment_id = session.get('payment_intent') or session.get('id')
+                        booking.stripe_payment_id = session.payment_intent or session.id
                         booking.save(update_fields=['status', 'stripe_payment_id'])
                         
                         # Note: Google Calendar sync will be triggered by a signal

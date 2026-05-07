@@ -208,16 +208,12 @@ class StripeIntegrationTest(TestCase):
         )
         
         # Mock Stripe event
-        mock_construct_event.return_value = {
-            'id': 'evt_test_123',
-            'type': 'checkout.session.completed',
-            'data': {
-                'object': {
-                    'metadata': {'booking_id': str(booking.id)},
-                    'payment_intent': 'pi_test_123'
-                }
-            }
-        }
+        mock_event = MagicMock()
+        mock_event.id = 'evt_test_123'
+        mock_event.type = 'checkout.session.completed'
+        mock_event.data.object.metadata = {'booking_id': str(booking.id)}
+        mock_event.data.object.payment_intent = 'pi_test_123'
+        mock_construct_event.return_value = mock_event
 
         url = reverse('stripe-webhook')
         response = self.client.post(url, data={}, HTTP_STRIPE_SIGNATURE="mock_sig")
@@ -245,11 +241,12 @@ class StripeIntegrationTest(TestCase):
         Verify that the webhook view is exempt from CSRF and accepts requests 
         even if a session cookie is present but no CSRF token is provided.
         """
-        mock_construct_event.return_value = {
-            'id': 'evt_test_csrf',
-            'type': 'checkout.session.completed',
-            'data': {'object': {}}
-        }
+        mock_event = MagicMock()
+        mock_event.id = 'evt_test_csrf'
+        mock_event.type = 'checkout.session.completed'
+        mock_event.data.object.metadata = None
+        mock_event.data.object.payment_intent = None
+        mock_construct_event.return_value = mock_event
 
         url = reverse('stripe-webhook')
 
@@ -277,16 +274,12 @@ class StripeIntegrationTest(TestCase):
             status="PENDING"
         )
         
-        mock_construct_event.return_value = {
-            'id': 'evt_test_idempotent',
-            'type': 'checkout.session.completed',
-            'data': {
-                'object': {
-                    'metadata': {'booking_id': str(booking.id)},
-                    'payment_intent': 'pi_test_idem'
-                }
-            }
-        }
+        mock_event = MagicMock()
+        mock_event.id = 'evt_test_idempotent'
+        mock_event.type = 'checkout.session.completed'
+        mock_event.data.object.metadata = {'booking_id': str(booking.id)}
+        mock_event.data.object.payment_intent = 'pi_test_idem'
+        mock_construct_event.return_value = mock_event
 
         url = reverse('stripe-webhook')
         
