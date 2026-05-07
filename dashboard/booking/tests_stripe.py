@@ -211,7 +211,8 @@ class StripeIntegrationTest(TestCase):
         mock_event = MagicMock()
         mock_event.id = 'evt_test_123'
         mock_event.type = 'checkout.session.completed'
-        mock_event.data.object.metadata = {'booking_id': str(booking.id)}
+        mock_event.data.object.metadata = MagicMock()
+        mock_event.data.object.metadata.booking_id = str(booking.id)
         mock_event.data.object.payment_intent = 'pi_test_123'
         mock_construct_event.return_value = mock_event
 
@@ -277,7 +278,8 @@ class StripeIntegrationTest(TestCase):
         mock_event = MagicMock()
         mock_event.id = 'evt_test_idempotent'
         mock_event.type = 'checkout.session.completed'
-        mock_event.data.object.metadata = {'booking_id': str(booking.id)}
+        mock_event.data.object.metadata = MagicMock()
+        mock_event.data.object.metadata.booking_id = str(booking.id)
         mock_event.data.object.payment_intent = 'pi_test_idem'
         mock_construct_event.return_value = mock_event
 

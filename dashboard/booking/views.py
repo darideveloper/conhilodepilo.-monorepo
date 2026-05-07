@@ -218,7 +218,7 @@ class StripeWebhookView(APIView):
         # Handle the event
         if event.type == 'checkout.session.completed':
             session = event.data.object
-            booking_id = session.metadata.get('booking_id') if session.metadata else None
+            booking_id = getattr(session.metadata, 'booking_id', None) if session.metadata else None
             if booking_id:
                 try:
                     booking = Booking.objects.get(id=booking_id)
