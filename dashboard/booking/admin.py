@@ -125,6 +125,7 @@ class CompanyProfileAdmin(SingletonModelAdmin, ModelAdminUnfoldBase):
                 "logo",
                 "currency",
                 "privacy_policy_url",
+                "terms_and_conditions_url",
             )
         }),
         (_("Contact Information"), {

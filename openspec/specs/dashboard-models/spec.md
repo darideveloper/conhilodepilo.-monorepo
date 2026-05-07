@@ -10,6 +10,13 @@ The system MUST allow an administrator to configure a privacy policy URL for the
 - **WHEN** the company configuration is requested
 - **THEN** the configuration MUST include a valid `privacy_policy_url`.
 
+### Requirement: Terms and Conditions Configuration
+The system MUST allow an administrator to configure a Terms and Conditions URL for the company.
+
+#### Scenario: Fetching company profile
+- **WHEN** the company configuration is requested
+- **THEN** the configuration MUST include a valid `terms_and_conditions_url`.
+
 ### Requirement: Booking Special Requests Storage
 The system MUST store any special requests made by the user during the booking process.
 

@@ -1,0 +1,7 @@
+{
+  "change-id": "fix-company-profile-admin",
+  "title": "Fix Company Profile Admin",
+  "description": "Add the missing Terms and Conditions URL field to the Company Profile admin interface.",
+  "status": "proposed",
+  "author": "Gemini CLI"
+}
