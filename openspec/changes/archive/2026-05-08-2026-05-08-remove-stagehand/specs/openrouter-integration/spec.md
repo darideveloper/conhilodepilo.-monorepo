@@ -1,8 +1,7 @@
-# openrouter-integration Specification
+# Spec: OpenRouter Integration
 
-## Purpose
-Define the integration requirements for using OpenRouter as an LLM provider within Stagehand, including support for custom models, analytics headers, and a patch for agent functionality.
-## Requirements
+## REMOVED Requirements
+
 ### Requirement: LLM Provider Configuration
 The system MUST allow configuring OpenRouter as the primary LLM provider. This configuration MUST support optional `OPENROUTER_REFERER`, `OPENROUTER_TITLE`, and `OPENROUTER_MODEL` environment variables.
 
@@ -18,4 +17,3 @@ The OpenRouter integration MUST support Stagehand's `agent()` functionality. Thi
 Given Stagehand is configured with OpenRouter using `PatchAISdkClient`
 When `stagehand.agent()` is called and executed
 Then the agent should successfully process the request using the configured OpenRouter model.
-
