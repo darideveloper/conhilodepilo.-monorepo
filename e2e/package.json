@@ -1,0 +1,19 @@
+{
+  "name": "@conhilorepilo/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^25.6.2",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.3.0"
+  }
+}
